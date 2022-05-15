@@ -102,7 +102,9 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         sphere.rotateZ(0.05f);
         break;
     case 'n':
-        sphere.resetRotation();
+        sphere = Sphere(sphere.radius, sphere.n);
+        sphere.init_sphere();
+        //sphere.resetRotation();
         break;
     case '+':
         if (sphere.n < 4) {
