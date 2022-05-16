@@ -13,7 +13,8 @@
 
 float distance = 4.0f;
 Sphere sphere(1, 1);
-System coordinates(sphere.radius);
+System local(1);
+System global(0.0f);
 
 
 bool init()
@@ -38,7 +39,8 @@ bool init()
     }
 
     sphere.init_sphere();
-    coordinates.init_system();
+    local.init_system();
+    global.init_system();
 
     return true;
 }
@@ -48,7 +50,8 @@ void render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     sphere.render();
-    coordinates.render();
+    local.render();
+    global.render();
 }
 
 
@@ -72,11 +75,14 @@ void glutKeyboard(unsigned char keycode, int x, int y)
     switch (keycode) {
     case 27: glutDestroyWindow(glutGetWindow()); return;
     case 'r':
-        sphere = Sphere(sphere.radius + 0.3, sphere.n);
+        if (sphere.radius - 0.3 < 0.5) {
+            break;
+        }
+        sphere = Sphere(sphere.radius - 0.3, sphere.n);
         init();
         break;
     case 'R':
-        sphere = Sphere(sphere.radius - 0.3, sphere.n);
+        sphere = Sphere(sphere.radius + 0.3, sphere.n);
         init();
         break;
     case 'a':
@@ -88,34 +94,48 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         break;
     case 'k':
-        if (coordinates.radius == sphere.radius) { coordinates = System(100.0f); }
-        else { coordinates = System(sphere.radius); }
-        coordinates.init_system();
+        if (global.radius == 0) {
+            global = System(100.0f);
+            global.init_system();
+        }
+        else {
+            global = System(0);
+            global.init_system();
+        }
         break;
     case 'x':
         sphere.rotateX(0.05f);
+        local.rotateX(0.05f);
         break;
     case 'y':
         sphere.rotateY(0.05f);
+        local.rotateY(0.05f);
         break;
     case 'z':
         sphere.rotateZ(0.05f);
+        local.rotateZ(0.05f);
         break;
     case 'n':
         sphere = Sphere(sphere.radius, sphere.n);
         sphere.init_sphere();
+        local = System(sphere.radius);
+        local.init_system();
         //sphere.resetRotation();
         break;
     case '+':
         if (sphere.n < 4) {
             sphere = Sphere(sphere.radius, sphere.n + 1);
             init();
+            local = System(sphere.radius);
+            local.init_system();
         }
         break;
     case '-':
         if (sphere.n > 0) {
             sphere = Sphere(sphere.radius, sphere.n - 1);
             init();
+            local = System(sphere.radius);
+            local.init_system();
         }
         break;
     }

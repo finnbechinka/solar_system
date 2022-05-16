@@ -198,15 +198,15 @@ public:
 
     float radius;
 
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> colors;
+    std::vector<GLushort> indices;
+
     inline System(float radius) :
         radius(radius)
     {}
 
     void init_system() {
-
-        std::vector<glm::vec3> vertices;
-        std::vector<glm::vec3> colors;
-        std::vector<GLushort> indices;
 
         vertices.push_back({ 0, 0, 0 });
         vertices.push_back({ radius, 0, 0 });
@@ -234,6 +234,36 @@ public:
             8, 6, 7
         };
 
+        init(vertices, colors, indices);
+    }
+
+    void rotateX(float rotation) {
+
+        for (int i = 0; i < vertices.size(); i++) {
+            float y = (vertices[i][1] * cos(rotation)) - (vertices[i][2] * sin(rotation));
+            float z = (vertices[i][1] * sin(rotation)) + (vertices[i][2] * cos(rotation));
+            vertices[i] = glm::vec3(vertices[i][0], y, z);
+        }
+        init(vertices, colors, indices);
+    }
+
+    void rotateY(float rotation) {
+        
+        for (int i = 0; i < vertices.size(); i++) {
+            float x = (vertices[i][0] * cos(rotation)) + (vertices[i][2] * sin(rotation));
+            float z = (-vertices[i][0] * sin(rotation)) + (vertices[i][2] * cos(rotation));
+            vertices[i] = glm::vec3(x, vertices[i][1], z);
+        }
+        init(vertices, colors, indices);
+    }
+
+    void rotateZ(float rotation) {
+        
+        for (int i = 0; i < vertices.size(); i++) {
+            float x = (vertices[i][0] * cos(rotation)) - (vertices[i][1] * sin(rotation));
+            float y = (vertices[i][0] * sin(rotation)) + (vertices[i][1] * cos(rotation));
+            vertices[i] = glm::vec3(x, y, vertices[i][2]);
+        }
         init(vertices, colors, indices);
     }
 
