@@ -17,11 +17,12 @@ glm::mat4x4 projection;
 
 class Object {
 public:
-    inline Object() :
+    inline Object(glm::vec3 coords) :
         vao(0),
         positionBuffer(0),
         colorBuffer(0),
-        indexBuffer(0)
+        indexBuffer(0),
+        coords(coords)
     {}
 
     inline ~Object() { // GL context must exist on destruction
@@ -60,7 +61,7 @@ public:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
-        this->model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+        this->model = glm::translate(glm::mat4(1.0f), coords);
     }
 
     void render()
@@ -80,6 +81,7 @@ public:
     GLuint colorBuffer;
     GLuint indexBuffer;
     glm::mat4x4 model;
+    glm::vec3 coords;
 };
 
 
@@ -92,8 +94,9 @@ public:
     std::vector<glm::vec3> colors;
     std::vector<GLushort> indices;
 
-    inline Sphere(float radius, int n) :
-        radius(radius), n(n), rotX(0), rotY(0), rotZ(0)
+    inline Sphere(float radius, int n, glm::vec3 coords) : Object(coords), radius(radius), n(n), rotX(0), rotY(0), rotZ(0)
+    {}
+    inline Sphere(float radius, int n, glm::vec3 coords, float rx, float ry, float rz) : Object(coords), radius(radius), n(n), rotX(rx), rotY(ry), rotZ(rz)
     {}
 
     void init_sphere()
@@ -133,6 +136,12 @@ public:
             vertices[x].z *= scale;
             colors.push_back({ 1.0, 1.0, 0.0 });
         }
+        rotateX(rotX);
+        rotX = rotX / 2;
+        rotateY(rotY);
+        rotY = rotY / 2;
+        rotateZ(rotZ);
+        rotZ = rotZ / 2;
 
         init(vertices, colors, indices);
     }
@@ -196,14 +205,16 @@ public:
 class System : public Object {
 public:
 
-    float radius;
+    float radius, rotX, rotY, rotZ;
 
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> colors;
     std::vector<GLushort> indices;
 
-    inline System(float radius) :
-        radius(radius)
+    inline System(float radius, glm::vec3 coords) : Object(coords), radius(radius), rotX(0), rotY(0), rotZ(0)
+    {}
+
+    inline System(float radius, glm::vec3 coords, float rx, float ry, float rz) : Object(coords), radius(radius), rotX(rx), rotY(ry), rotZ(rz)
     {}
 
     void init_system() {
@@ -234,11 +245,18 @@ public:
             8, 6, 7
         };
 
+        rotateX(rotX);
+        rotX = rotX / 2;
+        rotateY(rotY);
+        rotY = rotY / 2;
+        rotateZ(rotZ);
+        rotZ = rotZ / 2;
+
         init(vertices, colors, indices);
     }
 
     void rotateX(float rotation) {
-
+        rotX += rotation;
         for (int i = 0; i < vertices.size(); i++) {
             float y = (vertices[i][1] * cos(rotation)) - (vertices[i][2] * sin(rotation));
             float z = (vertices[i][1] * sin(rotation)) + (vertices[i][2] * cos(rotation));
@@ -248,7 +266,7 @@ public:
     }
 
     void rotateY(float rotation) {
-        
+        rotY += rotation;
         for (int i = 0; i < vertices.size(); i++) {
             float x = (vertices[i][0] * cos(rotation)) + (vertices[i][2] * sin(rotation));
             float z = (-vertices[i][0] * sin(rotation)) + (vertices[i][2] * cos(rotation));
@@ -258,7 +276,7 @@ public:
     }
 
     void rotateZ(float rotation) {
-        
+        rotZ += rotation;
         for (int i = 0; i < vertices.size(); i++) {
             float x = (vertices[i][0] * cos(rotation)) - (vertices[i][1] * sin(rotation));
             float y = (vertices[i][0] * sin(rotation)) + (vertices[i][1] * cos(rotation));
