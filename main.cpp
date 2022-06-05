@@ -13,7 +13,7 @@
 
 
 float distance = 4.0f;
-glm::vec3 sphere_pos = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 sphere_pos = glm::vec3(1.0f);
 Sphere sphere(1, 1, sphere_pos);
 System local(1, sphere_pos);
 System global(0.0f, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -24,7 +24,7 @@ bool init()
 {
     glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
     glEnable(GL_DEPTH_TEST);
-    view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     if (!program.compileShaderFromFile("shader/simple.vert", cg::GLSLShader::VERTEX)) {
         std::cerr << program.log();

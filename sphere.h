@@ -23,7 +23,9 @@ public:
         colorBuffer(0),
         indexBuffer(0),
         coords(coords)
-    {}
+    {
+        this->model = glm::translate(glm::mat4(1.0f), coords);
+    }
 
     inline ~Object() { // GL context must exist on destruction
         glDeleteVertexArrays(1, &vao);
@@ -61,7 +63,6 @@ public:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
-        this->model = glm::translate(glm::mat4(1.0f), coords);
     }
 
     void render()
