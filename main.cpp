@@ -15,7 +15,6 @@
 float distance = 4.0f;
 glm::vec3 sphere_pos = glm::vec3(1.0f);
 Sphere sphere(1, 1, sphere_pos);
-System local(1, sphere_pos);
 System global(0.0f, glm::vec3(0.0f, 0.0f, 0.0f));
 
 
@@ -42,7 +41,7 @@ bool init()
     }
 
     sphere.init_sphere();
-    local.init_system();
+    sphere.local.init_system();
     global.init_system();
 
     return true;
@@ -53,7 +52,7 @@ void render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     sphere.render();
-    local.render();
+    sphere.local.render();
     global.render();
 }
 
@@ -108,73 +107,54 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         break;
     case 'x':
         sphere.rotateX(0.05f);
-        local.rotateX(0.05f);
+        sphere.local.rotateX(0.05f);
         break;
     case 'y':
         sphere.rotateY(0.05f);
-        local.rotateY(0.05f);
+        sphere.local.rotateY(0.05f);
         break;
     case 'z':
         sphere.rotateZ(0.05f);
-        local.rotateZ(0.05f);
+        sphere.local.rotateZ(0.05f);
         break;
     case 'X':
     {
-        float y = (sphere_pos.y * cos(0.05f)) - (sphere_pos.z * sin(0.05f));
-        float z = (sphere_pos.y * sin(0.05f)) + (sphere_pos.z * cos(0.05f));
-        sphere_pos.y = y;
-        sphere_pos.z = z;
-        sphere = Sphere(sphere.radius, sphere.n, sphere_pos, sphere.rotX, sphere.rotY, sphere.rotZ);
-        sphere.init_sphere();
-        local = System(sphere.radius, sphere_pos, local.rotX, local.rotY, local.rotZ);
-        local.init_system();
+        sphere.global_rotate_x();
+        //local = System(sphere.radius, sphere.coords, local.rotX, local.rotY, local.rotZ);
+        //local.init_system();
         break;
     }
     case 'Y':
     {
-        float x = (sphere_pos.x * cos(0.05f)) + (sphere_pos.z * sin(0.05f));
-        float z = (-sphere_pos.x * sin(0.05f)) + (sphere_pos.z * cos(0.05f));
-        sphere_pos.x = x;
-        sphere_pos.z = z;
-        sphere = Sphere(sphere.radius, sphere.n, sphere_pos, sphere.rotX, sphere.rotY, sphere.rotZ);
-        sphere.init_sphere();
-        local = System(sphere.radius, sphere_pos, local.rotX, local.rotY, local.rotZ);
-        local.init_system();
+        sphere.global_rotate_y();
         break;
     }
     case 'Z':
     {
-        float x = (sphere_pos.x * cos(0.05f)) - (sphere_pos.y * sin(0.05f));
-        float y = (sphere_pos.x * sin(0.05f)) + (sphere_pos.y * cos(0.05f));
-        sphere_pos.x = x;
-        sphere_pos.y = y;
-        sphere = Sphere(sphere.radius, sphere.n, sphere_pos, sphere.rotX, sphere.rotY, sphere.rotZ);
-        sphere.init_sphere();
-        local = System(sphere.radius, sphere_pos, local.rotX, local.rotY, local.rotZ);
-        local.init_system();
+        sphere.global_rotate_z();
         break;
     }
     case 'n':
         sphere = Sphere(sphere.radius, sphere.n, sphere_pos);
         sphere.init_sphere();
-        local = System(sphere.radius, sphere_pos);
-        local.init_system();
+        sphere.local = System(sphere.radius, sphere_pos);
+        sphere.local.init_system();
         //sphere.resetRotation();
         break;
     case '+':
         if (sphere.n < 4) {
             sphere = Sphere(sphere.radius, sphere.n + 1, sphere_pos);
             init();
-            local = System(sphere.radius, sphere_pos);
-            local.init_system();
+            sphere.local = System(sphere.radius, sphere_pos);
+            sphere.local.init_system();
         }
         break;
     case '-':
         if (sphere.n > 0) {
             sphere = Sphere(sphere.radius, sphere.n - 1, sphere_pos);
             init();
-            local = System(sphere.radius, sphere_pos);
-            local.init_system();
+            sphere.local = System(sphere.radius, sphere_pos);
+            sphere.local.init_system();
         }
         break;
     }
@@ -185,7 +165,7 @@ void glutKeyboard(unsigned char keycode, int x, int y)
 
 int main(int argc, char** argv)
 {
-    glutInitWindowSize(640, 480);
+    glutInitWindowSize(1280, 720);
     glutInitWindowPosition(40, 40);
     glutInit(&argc, argv);
     glutInitContextVersion(4, 3);
