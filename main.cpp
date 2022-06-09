@@ -3,7 +3,6 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include "GLSLProgram.h"
 #include "GLTools.h"
@@ -12,18 +11,19 @@
 
 
 
-float distance = 4.0f;
-glm::vec3 sphere_pos = glm::vec3(1.0f);
+double distance = 10.0;
+glm::vec3 sphere_pos = glm::vec3(1.0);
 Sphere sphere(1, 1, sphere_pos);
-System global(0.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+Sphere sphere_2(1, 1, -sphere_pos);
+System global(0.0, glm::vec3(0.0, 0.0, 0.0));
 
 
 
 bool init()
 {
-    glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+    glClearColor((GLclampf)0.1, (GLclampf)0.1, (GLclampf)0.1, (GLclampf)0.1);
     glEnable(GL_DEPTH_TEST);
-    view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::lookAt(glm::vec3(0.0, 0.0, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     if (!program.compileShaderFromFile("shader/simple.vert", cg::GLSLShader::VERTEX)) {
         std::cerr << program.log();
@@ -42,6 +42,7 @@ bool init()
 
     sphere.init_sphere();
     sphere.local.init_system();
+    sphere_2.init_sphere();
     global.init_system();
 
     return true;
@@ -53,6 +54,7 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     sphere.render();
     sphere.local.render();
+    sphere_2.render();
     global.render();
 }
 
@@ -68,7 +70,7 @@ void glutResize(int width, int height)
 {
     height = height < 1 ? 1 : height;
     glViewport(0, 0, width, height);
-    projection = glm::perspective(45.0f, (float)width / height, 0.1f, 100.0f);
+    projection = glm::perspective(45.0, (double)width / (double)height, 0.1, 100.0);
 }
 
 
@@ -88,50 +90,51 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         init();
         break;
     case 'a':
-        distance = distance + 0.3f;
-        view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        distance = distance + 0.3;
+        view = glm::lookAt(glm::vec3(0.5, 1.5, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
         break;
     case 's':
-        distance = distance - 0.3f;
-        view = glm::lookAt(glm::vec3(0.5f, 1.5f, distance), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        distance = distance - 0.3;
+        view = glm::lookAt(glm::vec3(0.5, 1.5, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
         break;
     case 'k':
         if (global.radius == 0) {
-            global = System(100.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+            global = System(100.0, glm::vec3(0.0, 0.0, 0.0));
             global.init_system();
         }
         else {
-            global = System(0, glm::vec3(0.0f, 0.0f, 0.0f));
+            global = System(0, glm::vec3(0.0, 0.0, 0.0));
             global.init_system();
         }
         break;
     case 'x':
-        sphere.rotateX(0.05f);
-        sphere.local.rotateX(0.05f);
+        sphere.rotateX(45.0);
+        sphere.local.rotateX(45.0);
         break;
     case 'y':
-        sphere.rotateY(0.05f);
-        sphere.local.rotateY(0.05f);
+        sphere.rotateY(45.0);
+        sphere.local.rotateY(45.0);
         break;
     case 'z':
-        sphere.rotateZ(0.05f);
-        sphere.local.rotateZ(0.05f);
+        sphere.rotateZ(45.0);
+        sphere.local.rotateZ(45.0);
         break;
     case 'X':
     {
-        sphere.global_rotate_x();
-        //local = System(sphere.radius, sphere.coords, local.rotX, local.rotY, local.rotZ);
-        //local.init_system();
+        sphere.global_rotate_x(45.0);
+        sphere.local.global_rotate_x(45.0);
         break;
     }
     case 'Y':
     {
-        sphere.global_rotate_y();
+        sphere.global_rotate_y(45.0);
+        sphere.local.global_rotate_y(45.0);
         break;
     }
     case 'Z':
     {
-        sphere.global_rotate_z();
+        sphere.global_rotate_z(45.0);
+        sphere.local.global_rotate_z(45.0);
         break;
     }
     case 'n':
