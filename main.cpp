@@ -26,6 +26,7 @@ float rotation_speed = 0.2;
 float rotation_timer = 10.0;
 bool isAnimated = true;
 glm::vec3 g_ov = glm::vec3(v_sonne, 0.0, 0.0);
+double h = 0;
 
 bool init()
 {
@@ -108,10 +109,18 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         }
         break;
     case 'u':
+        h--;
         erde.coords.y--;
+        erde.model = glm::translate(glm::mat4(1.0f), erde.coords);
+        erde.local.coords.y--;
+        erde.local.model = glm::translate(glm::mat4(1.0f), erde.local.coords);
         break;
     case 'i':
+        h++;
         erde.coords.y++;
+        erde.model = glm::translate(glm::mat4(1.0f), erde.coords);
+        erde.local.coords.y++;
+        erde.local.model = glm::translate(glm::mat4(1.0f), erde.local.coords);
         break;
     case 'q': {
         sonne.local.rotateZ(5);
@@ -123,7 +132,7 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         glm::vec3 ov = skalar * rv;
 
         skalar = ov.x / erde.coords.x;
-        double new_y = ov.y * skalar;
+        double new_y = ov.y * skalar + h;
         g_ov = ov;
 
         erde.coords.y = new_y;
@@ -155,7 +164,7 @@ void glutKeyboard(unsigned char keycode, int x, int y)
         g_ov = skalar * rv;
 
         skalar = g_ov.x / erde.coords.x;
-        double new_y = g_ov.y * skalar;
+        double new_y = g_ov.y * skalar + h;
 
         erde.coords.y = new_y;
         erde.model = glm::translate(glm::mat4(1.0f), erde.coords);
@@ -189,7 +198,7 @@ void animation(int)
 
     if (isAnimated) {
         double k = erde.coords.x / g_ov.x;
-        double new_y = g_ov.y * k;
+        double new_y = g_ov.y * k + h;
         
         erde.coords.y = new_y;
         erde.local.coords.y = new_y;
