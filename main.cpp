@@ -4,6 +4,7 @@
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <thread>
 #include "GLSLProgram.h"
 #include "GLTools.h"
 #include "sphere.h"
@@ -11,19 +12,26 @@
 
 
 
-double distance = 10.0;
-glm::vec3 sphere_pos = glm::vec3(1.0);
-Sphere sphere(1, 1, sphere_pos);
-Sphere sphere_2(1, 1, -sphere_pos);
-System global(0.0, glm::vec3(0.0, 0.0, 0.0));
+double distance = 40;
+double v_sonne = 20;
+double v_erde = 7.5;
 
+Planet sonne(4, 3, glm::vec3(0.0, 0.0, 0.0));
+Planet erde(3, 2, glm::vec3(v_sonne, 0.0, 0.0));
 
+Planet mond_1(1.5, 1, glm::vec3(v_sonne, erde.coords.y - v_erde, erde.coords.z));
+Planet mond_2(1.5, 1, glm::vec3(v_sonne, erde.coords.y + v_erde, erde.coords.z));
+
+float rotation_speed = 0.2;
+float rotation_timer = 10.0;
+bool isAnimated = true;
+glm::vec3 g_ov = glm::vec3(v_sonne, 0.0, 0.0);
 
 bool init()
 {
     glClearColor((GLclampf)0.1, (GLclampf)0.1, (GLclampf)0.1, (GLclampf)0.1);
     glEnable(GL_DEPTH_TEST);
-    view = glm::lookAt(glm::vec3(0.0, 0.0, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    view = glm::lookAt(glm::vec3(0.0, 3.0, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     if (!program.compileShaderFromFile("shader/simple.vert", cg::GLSLShader::VERTEX)) {
         std::cerr << program.log();
@@ -40,11 +48,17 @@ bool init()
         return false;
     }
 
-    sphere.init_sphere();
-    sphere.local.init_system();
-    sphere_2.init_sphere();
-    global.init_system();
+    erde.childs.push_back(&mond_1);
+    erde.childs.push_back(&mond_2);
+    sonne.childs.push_back(&erde);
 
+    sonne.init_sphere();
+    erde.init_sphere();
+    mond_1.init_sphere();
+    mond_2.init_sphere();
+
+    sonne.local.init_system();
+    erde.local.init_system();
     return true;
 }
 
@@ -52,10 +66,12 @@ bool init()
 void render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    sphere.render();
-    sphere.local.render();
-    sphere_2.render();
-    global.render();
+    sonne.render();
+    erde.render();
+    mond_1.render();
+    mond_2.render();
+    sonne.local.render();
+    erde.local.render();
 }
 
 
@@ -78,91 +94,127 @@ void glutKeyboard(unsigned char keycode, int x, int y)
 {
     switch (keycode) {
     case 27: glutDestroyWindow(glutGetWindow()); return;
-    case 'r':
-        if (sphere.radius - 0.3 < 0.5) {
-            break;
-        }
-        sphere = Sphere(sphere.radius - 0.3, sphere.n, sphere_pos);
-        init();
+    case 'g':
+        isAnimated = !isAnimated;
         break;
-    case 'R':
-        sphere = Sphere(sphere.radius + 0.3, sphere.n, sphere_pos);
-        init();
-        break;
-    case 'a':
-        distance = distance + 0.3;
-        view = glm::lookAt(glm::vec3(0.5, 1.5, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-        break;
-    case 's':
-        distance = distance - 0.3;
-        view = glm::lookAt(glm::vec3(0.5, 1.5, distance), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-        break;
-    case 'k':
-        if (global.radius == 0) {
-            global = System(100.0, glm::vec3(0.0, 0.0, 0.0));
-            global.init_system();
-        }
-        else {
-            global = System(0, glm::vec3(0.0, 0.0, 0.0));
-            global.init_system();
+    case 'd':
+        if (rotation_speed - 0.5 > 0) {
+            rotation_speed -= 0.5;
         }
         break;
-    case 'x':
-        sphere.rotateX(45.0);
-        sphere.local.rotateX(45.0);
+    case 'f':
+        if (rotation_speed + 0.5 < 5.0) {
+            rotation_speed += 0.5;
+        }
         break;
-    case 'y':
-        sphere.rotateY(45.0);
-        sphere.local.rotateY(45.0);
+    case 'u':
+        erde.coords.y--;
         break;
-    case 'z':
-        sphere.rotateZ(45.0);
-        sphere.local.rotateZ(45.0);
+    case 'i':
+        erde.coords.y++;
         break;
-    case 'X':
-    {
-        sphere.global_rotate_x(45.0);
-        sphere.local.global_rotate_x(45.0);
+    case 'q': {
+        sonne.local.rotateZ(5);
+        sonne.rotateZ(5);
+
+        glm::vec3 rv = sonne.local.vertices[1];
+        double betrag = sqrt(rv.x*rv.x + rv.y*rv.y + rv.z*rv.z);
+        double skalar = v_sonne / betrag;
+        glm::vec3 ov = skalar * rv;
+
+        skalar = ov.x / erde.coords.x;
+        double new_y = ov.y * skalar;
+        g_ov = ov;
+
+        erde.coords.y = new_y;
+        erde.model = glm::translate(glm::mat4(1.0f), erde.coords);
+        erde.local.coords.y = new_y;
+        erde.local.model = glm::translate(glm::mat4(1.0f), erde.local.coords);
+
+        double diff_1 = mond_1.coords.y - new_y;
+        double diff_2 = mond_2.coords.y - new_y;
+
+        mond_1.coords.y = new_y + diff_1;
+        mond_2.coords.y = new_y + diff_2;
+        mond_1.model = glm::translate(glm::mat4(1.0f), mond_1.coords);
+        mond_2.model = glm::translate(glm::mat4(1.0f), mond_2.coords);
+
+        erde.rotateZ(5);
+        erde.local.rotateZ(5);
+        mond_1.rotateZ(5);
+        mond_2.rotateZ(5);
         break;
     }
-    case 'Y':
-    {
-        sphere.global_rotate_y(45.0);
-        sphere.local.global_rotate_y(45.0);
-        break;
-    }
-    case 'Z':
-    {
-        sphere.global_rotate_z(45.0);
-        sphere.local.global_rotate_z(45.0);
-        break;
-    }
-    case 'n':
-        sphere = Sphere(sphere.radius, sphere.n, sphere_pos);
-        sphere.init_sphere();
-        sphere.local = System(sphere.radius, sphere_pos);
-        sphere.local.init_system();
-        //sphere.resetRotation();
-        break;
-    case '+':
-        if (sphere.n < 4) {
-            sphere = Sphere(sphere.radius, sphere.n + 1, sphere_pos);
-            init();
-            sphere.local = System(sphere.radius, sphere_pos);
-            sphere.local.init_system();
-        }
-        break;
-    case '-':
-        if (sphere.n > 0) {
-            sphere = Sphere(sphere.radius, sphere.n - 1, sphere_pos);
-            init();
-            sphere.local = System(sphere.radius, sphere_pos);
-            sphere.local.init_system();
-        }
+    case 'w': {
+        sonne.local.rotateZ(-5);
+        sonne.rotateZ(-5);
+
+        glm::vec3 rv = sonne.local.vertices[1];
+        double betrag = sqrt(rv.x * rv.x + rv.y * rv.y + rv.z * rv.z);
+        double skalar = v_sonne / betrag;
+        g_ov = skalar * rv;
+
+        skalar = g_ov.x / erde.coords.x;
+        double new_y = g_ov.y * skalar;
+
+        erde.coords.y = new_y;
+        erde.model = glm::translate(glm::mat4(1.0f), erde.coords);
+        erde.local.coords.y = new_y;
+        erde.local.model = glm::translate(glm::mat4(1.0f), erde.local.coords);
+
+        double diff_1 = mond_1.coords.y - new_y;
+        double diff_2 = mond_2.coords.y - new_y;
+
+        mond_1.coords.y = new_y + diff_1;
+        mond_2.coords.y = new_y + diff_2;
+        mond_1.model = glm::translate(glm::mat4(1.0f), mond_1.coords);
+        mond_2.model = glm::translate(glm::mat4(1.0f), mond_2.coords);
+
+        erde.rotateZ(-5);
+        erde.local.rotateZ(-5);
+        mond_1.rotateZ(-5);
+        mond_2.rotateZ(-5);
         break;
     }
 
+    }
+
+
     glutPostRedisplay();
+}
+
+
+void animation(int)
+{
+
+    if (isAnimated) {
+        double k = erde.coords.x / g_ov.x;
+        double new_y = g_ov.y * k;
+        
+        erde.coords.y = new_y;
+        erde.local.coords.y = new_y;
+        double diff_1 = mond_1.coords.y - new_y;
+        double diff_2 = mond_2.coords.y - new_y;
+        mond_1.coords.y = new_y + diff_1;
+        mond_2.coords.y = new_y + diff_2;
+
+        erde.global_rotate_y(rotation_speed);
+        erde.local.global_rotate_y(rotation_speed);
+        erde.rotateY(rotation_speed);
+        erde.local.rotateY(rotation_speed);
+        
+    }
+    else {
+        erde.rotate_moons(rotation_speed);
+    }
+
+    mond_1.rotateX(rotation_speed);
+    mond_2.rotateX(rotation_speed);
+    
+    
+
+    glutPostRedisplay();
+    glutTimerFunc(rotation_timer, animation, 0);
 }
 
 
@@ -170,18 +222,24 @@ int main(int argc, char** argv)
 {
     glutInitWindowSize(1280, 720);
     glutInitWindowPosition(40, 40);
+
     glutInit(&argc, argv);
     glutInitContextVersion(4, 3);
     glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
-    glutCreateWindow("Aufgabenblatt 02");
+
+    glutCreateWindow("Aufgabenblatt 03");
     if (glewInit() != GLEW_OK) { return -1; }
+
     glutReshapeFunc(glutResize);
     glutDisplayFunc(glutDisplay);
     glutKeyboardFunc(glutKeyboard);
 
     bool result = init();
+
     if (!result) { return -2; }
+
+    std::thread animLoop(animation, 5);
     glutMainLoop();
 
     return 0;
