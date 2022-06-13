@@ -17,44 +17,24 @@ glm::mat4x4 projection;
 
 class Object {
 public:
+
 	GLuint vao;
 	GLuint positionBuffer;
 	GLuint colorBuffer;
 	GLuint indexBuffer;
+
 	glm::mat4x4 model;
 	glm::vec3 coords;
+
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> colors;
 	std::vector<GLushort> indices;
-	double rot_x, rot_y, rot_z;
 
-	inline Object(glm::vec3 coords) :
-		vao(0),
-		positionBuffer(0),
-		colorBuffer(0),
-		indexBuffer(0),
-		coords(coords),
-		rot_x(0),
-		rot_y(0),
-		rot_z(0)
-	{
+	inline Object(glm::vec3 coords) : vao(0), positionBuffer(0), colorBuffer(0), indexBuffer(0), coords(coords) {
 		this->model = glm::translate(glm::mat4(1.0f), coords);
 	}
 
-	inline Object(glm::vec3 coords, double rx, double ry, double rz) :
-		vao(0),
-		positionBuffer(0),
-		colorBuffer(0),
-		indexBuffer(0),
-		coords(coords),
-		rot_x(rx),
-		rot_y(ry),
-		rot_z(rz)
-	{
-		this->model = glm::translate(glm::mat4(1.0f), coords);
-	}
-
-	inline ~Object() { // GL context must exist on destruction
+	inline ~Object() {
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &indexBuffer);
 		glDeleteBuffers(1, &colorBuffer);
@@ -105,8 +85,6 @@ public:
 	}
 
 	void rotateX(double deg) {
-		rot_x += deg;
-		// convert degrees to radians
 		double rad = deg * (glm::pi<double>() / 180);
 		for (int i = 0; i < vertices.size(); i++) {
 			double y = (vertices[i][1] * cos(rad)) - (vertices[i][2] * sin(rad));
@@ -117,8 +95,6 @@ public:
 	}
 
 	void rotateY(double deg) {
-		rot_y += deg;
-		// convert degrees to radians
 		double rad = deg * (glm::pi<double>() / 180);
 		for (int i = 0; i < vertices.size(); i++) {
 			double x = (vertices[i][0] * cos(rad)) + (vertices[i][2] * sin(rad));
@@ -129,8 +105,6 @@ public:
 	}
 
 	void rotateZ(double deg) {
-		rot_z += deg;
-		// convert degrees to radians
 		double rad = deg * (glm::pi<double>() / 180);
 		for (int i = 0; i < vertices.size(); i++) {
 			double x = (vertices[i][0] * cos(rad)) - (vertices[i][1] * sin(rad));
@@ -138,36 +112,6 @@ public:
 			vertices[i] = glm::vec3(x, y, vertices[i][2]);
 		}
 		init(vertices, colors, indices);
-	}
-
-	void global_rotate_x(double deg) {
-		// convert degrees to radians
-		double rad = deg * (glm::pi<double>() / 180);
-		double y = (coords.y * cos(rad)) - (coords.z * sin(rad));
-		double z = (coords.y * sin(rad)) + (coords.z * cos(rad));
-		coords.y = y;
-		coords.z = z;
-		this->model = glm::translate(glm::mat4(1.0f), coords);
-	}
-
-	void global_rotate_y(double deg) {
-		// convert degrees to radians
-		double rad = deg * (glm::pi<double>() / 180);
-		double x = (coords.x * cos(rad)) + (coords.z * sin(rad));
-		double z = (-coords.x * sin(rad)) + (coords.z * cos(rad));
-		coords.x = x;
-		coords.z = z;
-		this->model = glm::translate(glm::mat4(1.0f), coords);
-	}
-
-	void global_rotate_z(double deg) {
-		// convert degrees to radians
-		double rad = deg * (glm::pi<double>() / 180);
-		double x = (coords.x * cos(rad)) - (coords.y * sin(rad));
-		double y = (coords.x * sin(rad)) + (coords.y * cos(rad));
-		coords.x = x;
-		coords.y = y;
-		this->model = glm::translate(glm::mat4(1.0f), coords);
 	}
 };
 
@@ -180,17 +124,14 @@ public:
 	inline System(double radius, glm::vec3 coords) : Object(coords), radius(radius)
 	{}
 
-	inline System(double radius, glm::vec3 coords, double rx, double ry, double rz) : Object(coords,rx,ry,rz), radius(radius)
-	{}
-
 	void init_system() {
 
 		vertices.push_back({ 0, 0, 0 });
 		vertices.push_back({ radius, 0, 0 });
 		vertices.push_back({ -radius, 0, 0 });
 		vertices.push_back({ 0, 0, 0 });
-		vertices.push_back({ 0, radius, 0 });
-		vertices.push_back({ 0,-radius, 0 });
+		vertices.push_back({ 0, 1.5*radius, 0 });
+		vertices.push_back({ 0, 1.5*-radius, 0 });
 		vertices.push_back({ 0, 0, 0 });
 		vertices.push_back({ 0, 0, radius });
 		vertices.push_back({ 0, 0,-radius });
@@ -213,6 +154,36 @@ public:
 
 		init(vertices, colors, indices);
 	}
+
+	void global_rotate_x(double deg) {
+		double rad = deg * (glm::pi<double>() / 180);
+		double y = (coords.y * cos(rad)) - (coords.z * sin(rad));
+		double z = (coords.y * sin(rad)) + (coords.z * cos(rad));
+		coords.y = y;
+		coords.z = z;
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+	}
+
+	void global_rotate_y(double deg) {
+
+		double rad = deg * (glm::pi<double>() / 180);
+		double x = (coords.x * cos(rad)) + (coords.z * sin(rad));
+		double z = (-coords.x * sin(rad)) + (coords.z * cos(rad));
+
+		coords.x = x;
+		coords.z = z;
+
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+	}
+
+	void global_rotate_z(double deg) {
+		double rad = deg * (glm::pi<double>() / 180);
+		double x = (coords.x * cos(rad)) - (coords.y * sin(rad));
+		double y = (coords.x * sin(rad)) + (coords.y * cos(rad));
+		coords.x = x;
+		coords.y = y;
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+	}
 };
 
 class Sphere : public Object {
@@ -222,38 +193,32 @@ public:
 	int n;
 	System local;
 
-	inline Sphere(double radius, int n, glm::vec3 coords) : Object(coords), radius(radius), n(n), local(System(1, coords))
-	{}
-	inline Sphere(double radius, int n, glm::vec3 coords, double rx, double ry, double rz) : Object(coords,rx, ry, rz), radius(radius), n(n), local(System(1, coords))
-	{}
+	inline Sphere(double radius, int n, glm::vec3 coords) : Object(coords), radius(radius), n(n), local(System(radius, coords)) {}
 
 	void init_sphere()
 	{
 		vertices.clear();
 		indices.clear();
 		colors.clear();
+
 		glm::vec3 top = { 0, radius, 0 };
 		glm::vec3 a = { radius, 0, radius };
 		glm::vec3 b = { radius, 0, -radius };
 		glm::vec3 c = { -radius , 0, -radius };
 		glm::vec3 d = { -radius , 0, radius };
 
-		// topside 
 		triangle(top, ((a - top) / glm::vec3{ n + 1, n + 1, n + 1 }), (b - top) / (glm::vec3{ n + 1, n + 1, n + 1 }));
 		triangle(top, ((b - top) / glm::vec3{ n + 1, n + 1, n + 1 }), (c - top) / (glm::vec3{ n + 1, n + 1, n + 1 }));
 		triangle(top, ((c - top) / glm::vec3{ n + 1, n + 1, n + 1 }), (d - top) / (glm::vec3{ n + 1, n + 1, n + 1 }));
 		triangle(top, ((d - top) / glm::vec3{ n + 1, n + 1, n + 1 }), (a - top) / (glm::vec3{ n + 1, n + 1, n + 1 }));
 
 		int vsz = vertices.size();
-		for (int i = 0; i < vsz; i++)
-		{
+		for (int i = 0; i < vsz; i++) {
 			vertices.push_back(-vertices[i]);
-
 		}
 
 		int isz = indices.size();
-		for (int i = 0; i < isz; i++)
-		{
+		for (int i = 0; i < isz; i++) {
 			indices.push_back(indices[i] + isz);
 		}
 
@@ -267,15 +232,14 @@ public:
 			colors.push_back({ 1.0, 1.0, 0.0 });
 		}
 
-		
-
 		init(vertices, colors, indices);
 	}
 
 	void triangle(glm::vec3 start, glm::vec3 leftvec, glm::vec3 rightvec)
 	{
-		if (start.y <= 0)
+		if (start.y <= 0) {
 			return;
+		}
 
 		vertices.push_back(start);
 		vertices.push_back(start + leftvec);
@@ -291,3 +255,57 @@ public:
 
 };
 
+
+class Planet : public Sphere {
+
+public:
+
+	std::vector<Planet*> childs;
+
+	inline Planet(double radius, int n, glm::vec3 coords) : Sphere(radius, n, coords) {}
+
+	void setChild(std::vector<Planet*> childs) {
+		this->childs = childs;
+	}
+
+	void global_rotate_x(double deg) {
+		double rad = deg * (glm::pi<double>() / 180);
+		double y = (coords.y * cos(rad)) - (coords.z * sin(rad));
+		double z = (coords.y * sin(rad)) + (coords.z * cos(rad));
+		coords.y = y;
+		coords.z = z;
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+	}
+
+	void global_rotate_y(double deg) {
+
+		double rad = deg * (glm::pi<double>() / 180);
+		double x = (coords.x * cos(rad)) + (coords.z * sin(rad));
+		double z = (-coords.x * sin(rad)) + (coords.z * cos(rad));
+
+		coords.x = x;
+		coords.z = z;
+
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+
+		rotate_moons(deg);
+	}
+
+	void rotate_moons(double deg) {
+		for (auto child : childs) {
+			(*child).model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+			(*child).global_rotate_x(deg);
+			(*child).model = glm::translate(glm::mat4(1.0f), glm::vec3(coords.x, coords.y + (*child).coords.y, coords.z + (*child).coords.z));
+		}
+	}
+
+	void global_rotate_z(double deg) {
+		double rad = deg * (glm::pi<double>() / 180);
+		double x = (coords.x * cos(rad)) - (coords.y * sin(rad));
+		double y = (coords.x * sin(rad)) + (coords.y * cos(rad));
+		coords.x = x;
+		coords.y = y;
+		this->model = glm::translate(glm::mat4(1.0f), coords);
+	}
+
+};
